@@ -185,19 +185,23 @@
                             </select>
                         </div>
 
-                        <!-- Campos Condicionales de Agencia (Inicialmente Ocultos) -->
+                        <!-- Campos Condicionales de Agencia (ACTUALIZADOS) -->
                         <div id="agency-fields" class="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-6 hidden">
                             <h3 class="font-semibold text-blue-800 mb-3">Datos de Envío (Agencia)</h3>
+                            
                             <div class="mb-3">
-                                <label for="agency-name" class="block text-sm font-medium text-blue-700 mb-1">Nombre (Envío) <span class="text-red-500">*</span></label>
-                                <input type="text" id="agency-name" name="agencyName" placeholder="Nombre completo del destinatario"
+                                <label for="agency-dni" class="block text-sm font-medium text-blue-700 mb-1">DNI (8 dígitos) <span class="text-red-500">*</span></label>
+                                <input type="text" id="agency-dni" name="agencyDNI" placeholder="DNI o documento de identidad (8 dígitos)"
+                                       maxlength="8" pattern="[0-9]{8}" 
                                        class="w-full border border-blue-300 rounded-lg p-2 focus:ring-primary-color focus:border-primary-color transition duration-150">
                             </div>
+                            
                             <div class="mb-3">
-                                <label for="agency-dni" class="block text-sm font-medium text-blue-700 mb-1">DNI <span class="text-red-500">*</span></label>
-                                <input type="text" id="agency-dni" name="agencyDNI" placeholder="DNI o documento de identidad"
+                                <label for="agency-name" class="block text-sm font-medium text-blue-700 mb-1">Nombre y Apellido <span class="text-red-500">*</span></label>
+                                <input type="text" id="agency-name" name="agencyName" required placeholder="Nombre completo del destinatario"
                                        class="w-full border border-blue-300 rounded-lg p-2 focus:ring-primary-color focus:border-primary-color transition duration-150">
                             </div>
+                            
                             <div>
                                 <label for="agency-destination" class="block text-sm font-medium text-blue-700 mb-1">Destino <span class="text-red-500">*</span></label>
                                 <input type="text" id="agency-destination" name="agencyDestination" placeholder="Ciudad o provincia de destino"
@@ -305,11 +309,16 @@
          * Usamos onSnapshot para actualizaciones en tiempo real.
          */
         const startFirestoreListener = () => {
-            if (!db || !userId) return; // Asegurar que Firebase esté listo
+            if (!db || !userId) {
+                console.error("Firestore o Usuario no inicializado. No se pudo iniciar el listener.");
+                return; // Asegurar que Firebase esté listo
+            }
+            console.log("Iniciando listener de Firestore...");
 
             const q = query(collection(db, getCollectionPath()));
 
             onSnapshot(q, (snapshot) => {
+                console.log("Datos recibidos de Firestore.");
                 const fetchedProducts = [];
                 snapshot.forEach((doc) => {
                     fetchedProducts.push({ id: doc.id, ...doc.data() });
@@ -323,7 +332,7 @@
                 document.getElementById('loading-message').classList.add('hidden');
             }, (error) => {
                 console.error("Error al escuchar Firestore:", error);
-                document.getElementById('loading-message').textContent = 'Error al cargar los datos. Ver consola.';
+                document.getElementById('loading-message').textContent = 'Error al cargar los datos. Ver consola para más detalles.';
             });
         };
 
@@ -358,6 +367,7 @@
                 document.getElementById('image-preview').classList.add('hidden');
                 document.querySelector('#image-preview img').src = '';
                 toggleAgencyFields(); // Ocultar campos de agencia si es necesario
+                
             } catch (error) {
                 console.error("Error al añadir documento:", error);
                 alertModal("Error", "Hubo un error al guardar el producto. Inténtalo de nuevo.");
@@ -372,6 +382,9 @@
         // ------------------------------------
         // 3. LÓGICA DEL FORMULARIO Y UI
         // ------------------------------------
+        
+        // Se ha removido la función lookupDNI, ya que no se usará.
+
 
         /**
          * Maneja el envío del formulario.
@@ -424,13 +437,21 @@
 
             // Añadir campos de agencia si aplica
             if (data.type === 'agencia') {
-                data.agencyName = formData.get('agencyName');
                 data.agencyDNI = formData.get('agencyDNI');
+                data.agencyName = formData.get('agencyName'); // Se recoge el valor ingresado
                 data.agencyDestination = formData.get('agencyDestination');
                 
-                // Simple validación de campos de agencia
-                 if (!data.agencyName || !data.agencyDNI || !data.agencyDestination) {
-                     alertModal("Campos Incompletos", "Debe completar todos los campos de 'Agencia'.");
+                // Validación de DNI y Nombre
+                 if (!data.agencyDNI || !/^\d{8}$/.test(data.agencyDNI)) {
+                     alertModal("DNI Inválido", "Debe ingresar un DNI válido de 8 dígitos.");
+                     return;
+                 }
+                 if (!data.agencyName || data.agencyName.trim() === '') {
+                     alertModal("Nombre Requerido", "Debe ingresar el nombre y apellido del cliente.");
+                     return;
+                 }
+                 if (!data.agencyDestination) {
+                     alertModal("Campos Incompletos", "Debe completar el campo 'Destino'.");
                      return;
                  }
             }
@@ -446,21 +467,30 @@
             const agencyFields = document.getElementById('agency-fields');
             const isAgency = type === 'agencia';
 
-            // Lógica explícita para mostrar u ocultar, lo que debería solucionar el problema
+            // Lógica explícita para mostrar u ocultar
             if (isAgency) {
                 agencyFields.classList.remove('hidden');
             } else {
                 agencyFields.classList.add('hidden');
             }
             
-            // Obtener todos los inputs dentro de los campos de agencia
-            const agencyInputs = agencyFields.querySelectorAll('input');
+            // Obtener los inputs específicos
+            const dniInput = document.getElementById('agency-dni');
+            const nameInput = document.getElementById('agency-name');
+            const destinationInput = document.getElementById('agency-destination');
 
-            // Habilitar/deshabilitar y hacer requeridos/opcionales
-            agencyInputs.forEach(input => {
-                input.required = isAgency;
-                input.disabled = !isAgency; // Deshabilitar si no es agencia para evitar que se envíen o validen si no son visibles
-            });
+            // Setear el estado de los campos de DNI, Nombre y Destino
+            dniInput.required = isAgency;
+            dniInput.disabled = !isAgency;
+            nameInput.required = isAgency; // Nombre ahora siempre requerido si es Agencia
+            nameInput.disabled = !isAgency;
+            destinationInput.required = isAgency;
+            destinationInput.disabled = !isAgency;
+
+            // Limpiar estilos de autocompletado si no es agencia
+            if (!isAgency) {
+                 nameInput.classList.remove('bg-green-50', 'bg-red-50');
+            }
         };
 
         /**
@@ -479,7 +509,6 @@
 
                 // Convertir la imagen a Data URL para guardarla como una cadena simple si es necesario.
                 // ADVERTENCIA: Solo guardaré un prefijo simple para evitar el límite de 1MB de Firestore.
-                // En un entorno real, la imagen debe subirse a Firebase Storage.
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     dataUrlInput.value = e.target.result.substring(0, 100) + '...'; // Placeholder de la URL de datos
@@ -568,7 +597,7 @@
                         return '<li class="text-gray-500">Ningún producto seleccionado.</li>';
                     }
                     return options.map(opt => `
-                        <li class="flex items-center">
+                        <li class="flex items-center text-xs">
                             <i data-lucide="${opt.startsWith('OTROS:') ? 'edit-3' : 'check-circle'}" class="w-4 h-4 mr-1 ${opt.startsWith('OTROS:') ? 'text-gray-500' : 'text-secondary-color'}"></i>
                             <span>${opt}</span>
                         </li>
@@ -621,8 +650,8 @@
                                         Datos de Agencia
                                     </h4>
                                     <div class="text-xs space-y-1 text-blue-700">
-                                        <p><span class="font-semibold">Nombre:</span> ${product.agencyName || 'N/A'}</p>
                                         <p><span class="font-semibold">DNI:</span> ${product.agencyDNI || 'N/A'}</p>
+                                        <p><span class="font-semibold">Nombre y Apellido:</span> ${product.agencyName || 'N/A'}</p>
                                         <p><span class="font-semibold">Destino:</span> ${product.agencyDestination || 'N/A'}</p>
                                     </div>
                                 </div>
