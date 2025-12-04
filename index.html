@@ -147,7 +147,7 @@
                                 
                                 <!-- Otros (Text Input) -->
                                 <div class="mt-3">
-                                    <label for="opt-otros" class="block text-sm text-gray-700 mb-1 font-medium">OTROS (Especifique brevemente):</label>
+                                    <label for="opt-otros" class="block text-sm font-medium text-gray-700 mb-1">OTROS (Especifique brevemente):</label>
                                     <input type="text" id="opt-otros" name="otherOption" placeholder="Especifique otro producto (Ej: Llaveros, agendas)"
                                            class="w-full border border-gray-300 rounded-lg p-2 focus:ring-primary-color focus:border-primary-color transition duration-150 text-sm">
                                 </div>
@@ -329,6 +329,8 @@
                 
                 // Renderizar la lista después de la búsqueda
                 renderProductList(products.filter(p => filterProduct(p, currentSearchTerm)));
+                
+                // *** FIX: Ocultar el mensaje de carga inmediatamente después del primer snapshot exitoso ***
                 document.getElementById('loading-message').classList.add('hidden');
             }, (error) => {
                 console.error("Error al escuchar Firestore:", error);
@@ -573,6 +575,11 @@
 
             if (productList.length === 0) {
                 noResults.classList.remove('hidden');
+                // Si no hay productos, pero el listener ya cargó, mostramos el mensaje de lista vacía
+                if (document.getElementById('loading-message').classList.contains('hidden')) {
+                    noResults.innerHTML = '<i data-lucide="package-open" class="w-8 h-8 mx-auto mb-2 text-gray-400"></i><p class="text-sm">¡No hay productos registrados aún!</p>';
+                    noResults.classList.remove('hidden');
+                }
                 return;
             }
             noResults.classList.add('hidden');
