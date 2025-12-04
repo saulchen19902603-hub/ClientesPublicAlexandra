@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clientes Public</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fuente Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Iconos Lucide-React para una interfaz amigable -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary-color: #3b82f6; /* Blue-500 */
+            --secondary-color: #10b981; /* Emerald-500 */
+            --background-color: #f9fafb; /* Gray-50 */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+        }
+        /* Estilos personalizados para la carga de imágenes */
+        .image-input-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #9ca3af;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            text-align: center;
+            min-height: 150px;
+            transition: all 0.2s;
+        }
+        .image-input-area:hover {
+            border-color: var(--primary-color);
+            background-color: #eff6ff; /* Blue-50 */
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app" class="min-h-screen">
+        <!-- Encabezado y Barra de Búsqueda -->
+        <header class="bg-white shadow-md sticky top-0 z-10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center">
+                <h1 class="text-3xl font-bold text-gray-900 mb-4 sm:mb-0 flex items-center">
+                    <i data-lucide="users" class="w-8 h-8 mr-2 text-primary-color"></i>
+                    Clientes Public
+                </h1>
+                <div class="w-full sm:w-80">
+                    <div class="relative">
+                        <input type="search" id="search-input" oninput="handleSearch(this.value)" placeholder="Buscar por número de teléfono (9 dígitos)"
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-primary-color focus:border-primary-color transition duration-150 text-sm">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+            <!-- Mostrar ID de Usuario (para colaboración) -->
+            <div id="user-id-display" class="bg-gray-100 text-xs text-gray-500 text-center py-1">
+                Cargando usuario...
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Columna de Ingreso de Nuevo Producto -->
+            <div class="lg:col-span-1">
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <h2 class="text-xl font-semibold mb-6 text-gray-800 flex items-center">
+                        <i data-lucide="plus-circle" class="w-6 h-6 mr-2 text-secondary-color"></i>
+                        Ingresar Nuevo Producto
+                    </h2>
+                    <form id="product-form">
+
+                        <!-- Campo 1: Tipo de Servicio -->
+                        <div class="mb-4">
+                            <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Servicio <span class="text-red-500">*</span></label>
+                            <select id="type" name="type" required onchange="toggleAgencyFields()"
+                                    class="w-full border border-gray-300 rounded-lg p-2 focus:ring-primary-color focus:border-primary-color transition duration-150">
+                                <option value="" disabled selected>Seleccione una opción</option>
+                                <option value="tienda">Tienda</option>
+                                <option value="agencia">Agencia</option>
+                                <option value="delivery">Delivery</option>
+                            </select>
+                        </div>
+
+                        <!-- Campo 2: Número Telefónico (9 dígitos) -->
+                        <div class="mb-4">
+                            <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Número Telefónico (9 dígitos) <span class="text-red-500">*</span></label>
+                            <input type="text" id="phone" name="phone" required placeholder="Ej: 987654321" maxlength="9" pattern="[0-9]{9}"
+                                   class="w-full border border-gray-300 rounded-lg p-2 focus:ring-primary-color focus:border-primary-color transition duration-150">
+                            <p id="phone-error" class="text-xs text-red-500 mt-1 hidden">Debe ingresar exactamente 9 dígitos numéricos.</p>
+                        </div>
+
+                        <!-- Campo 3: Fecha -->
+                        <div class="mb-4">
+                            <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Fecha <span class="text-red-500">*</span></label>
+                            <input type="date" id="date" name="date" required
+                                   class="w-full border border-gray-300 rounded-lg p-2 focus:ring-primary-color focus:border-primary-color transition duration-150">
+                        </div>
+
+                        <!-- Campo 4: Captura de Imagen -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Imagen del Producto</label>
+                            <div id="image-preview" class="mb-4 p-2 bg-gray-100 rounded-lg hidden">
+                                <img src="" alt="Previsualización" class="w-full h-auto object-contain rounded-lg max-h-48">
+                            </div>
+                            <div class="image-input-area" onclick="document.getElementById('image-upload').click()">
+                                <i data-lucide="image" class="w-8 h-8 text-gray-500 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-600">Click para cargar, capturar o pegar</p>
+                                <p class="text-xs text-gray-500 mt-1">Sube una imagen desde PC/Móvil o Cámara/Portapapeles.</p>
+                                <!-- Input real oculto -->
+                                <input type="file" id="image-upload" name="image" accept="image/*" class="hidden" onchange="previewImage(event)">
+                            </div>
+                            <input type="hidden" id="image-data-url" name="imageDataUrl">
+                        </div>
+                        
+                        <!-- NUEVO BLOQUE: Opciones de Producto con Check y Otros -->
+                        <div class="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <h3 class="text-sm font-medium text-gray-700 mb-3">Productos Solicitados <span class="text-red-500">*</span></h3>
+                            <div id="product-options-container" class="space-y-2">
+                                <!-- Checkbox Options -->
+                                <div class="flex flex-wrap gap-x-6 gap-y-2">
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="opt-banner" name="options" value="BANNER" class="h-4 w-4 text-primary-color border-gray-300 rounded focus:ring-primary-color">
+                                        <label for="opt-banner" class="ml-2 text-sm text-gray-700 font-medium">BANNER</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="opt-foam" name="options" value="FOAM" class="h-4 w-4 text-primary-color border-gray-300 rounded focus:ring-primary-color">
+                                        <label for="opt-foam" class="ml-2 text-sm text-gray-700 font-medium">FOAM</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="opt-stickers" name="options" value="STICKERS" class="h-4 w-4 text-primary-color border-gray-300 rounded focus:ring-primary-color">
+                                        <label for="opt-stickers" class="ml-2 text-sm text-gray-700 font-medium">STICKERS</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="opt-volantes" name="options" value="VOLANTES" class="h-4 w-4 text-primary-color border-gray-300 rounded focus:ring-primary-color">
+                                        <label for="opt-volantes" class="ml-2 text-sm text-gray-700 font-medium">VOLANTES</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="opt-tarjetas" name="options" value="TARJETAS" class="h-4 w-4 text-primary-color border-gray-300 rounded focus:ring-primary-color">
+                                        <label for="opt-tarjetas" class="ml-2 text-sm text-gray-700 font-medium">TARJETAS</label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Otros (Text Input) -->
+                                <div class="mt-3">
+                                    <label for="opt-otros" class="block text-sm text-gray-700 mb-1 font-medium">OTROS (Especifique brevemente):</label>
+                                    <input type="text" id="opt-otros" name="otherOption" placeholder="Especifique otro producto (Ej: Llaveros, agendas)"
+                                           class="w-full border border-gray-300 rounded-lg p-2 focus:ring-primary-color focus:border-primary-color transition duration-150 text-sm">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- FIN NUEVO BLOQUE -->
+
+
+                        <!-- Campo 5: Diseñador -->
+                        <div class="mb-4">
+                            <label for="designer" class="block text-sm font-medium text-gray-700 mb-1">Diseñador <span class="text-red-500">*</span></label>
+                            <select id="designer" name="designer" required
+                                    class="w-full border border-gray-300 rounded-lg p-2 focus:ring-primary-color focus:border-primary-color transition duration-150">
+                                <option value="" disabled selected>Seleccione diseñador</option>
+                                <option value="Alvaro">Alvaro</option>
+                                <option value="Piero">Piero</option>
+                                <option value="Jhordan">Jhordan</option>
+                                <option value="Santiago">Santiago</option>
+                                <option value="Kely">Kely</option>
+                                <option value="Saul">Saul</option>
+                                <option value="Milagros">Milagros</option>
+                            </select>
+                        </div>
+
+                        <!-- Campo 6: Origen -->
+                        <div class="mb-6">
+                            <label for="origin" class="block text-sm font-medium text-gray-700 mb-1">Origen <span class="text-red-500">*</span></label>
+                            <select id="origin" name="origin" required
+                                    class="w-full border border-gray-300 rounded-lg p-2 focus:ring-primary-color focus:border-primary-color transition duration-150">
+                                <option value="" disabled selected>Seleccione origen</option>
+                                <option value="waoo">waoo</option>
+                                <option value="wilson">wilson</option>
+                                <option value="venezuela">venezuela</option>
+                                <option value="bolivia">bolivia</option>
+                            </select>
+                        </div>
+
+                        <!-- Campos Condicionales de Agencia (Inicialmente Ocultos) -->
+                        <div id="agency-fields" class="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-6 hidden">
+                            <h3 class="font-semibold text-blue-800 mb-3">Datos de Envío (Agencia)</h3>
+                            <div class="mb-3">
+                                <label for="agency-name" class="block text-sm font-medium text-blue-700 mb-1">Nombre (Envío) <span class="text-red-500">*</span></label>
+                                <input type="text" id="agency-name" name="agencyName" placeholder="Nombre completo del destinatario"
+                                       class="w-full border border-blue-300 rounded-lg p-2 focus:ring-primary-color focus:border-primary-color transition duration-150">
+                            </div>
+                            <div class="mb-3">
+                                <label for="agency-dni" class="block text-sm font-medium text-blue-700 mb-1">DNI <span class="text-red-500">*</span></label>
+                                <input type="text" id="agency-dni" name="agencyDNI" placeholder="DNI o documento de identidad"
+                                       class="w-full border border-blue-300 rounded-lg p-2 focus:ring-primary-color focus:border-primary-color transition duration-150">
+                            </div>
+                            <div>
+                                <label for="agency-destination" class="block text-sm font-medium text-blue-700 mb-1">Destino <span class="text-red-500">*</span></label>
+                                <input type="text" id="agency-destination" name="agencyDestination" placeholder="Ciudad o provincia de destino"
+                                       class="w-full border border-blue-300 rounded-lg p-2 focus:ring-primary-color focus:border-primary-color transition duration-150">
+                            </div>
+                        </div>
+
+                        <!-- Botón de Guardar -->
+                        <button type="submit" id="save-button"
+                                class="w-full bg-primary-color hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 shadow-md">
+                            <span id="save-text">Guardar Producto</span>
+                            <i id="loading-spinner" data-lucide="loader" class="animate-spin w-5 h-5 inline-block ml-2 hidden"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Columna de Lista de Clientes (Productos) -->
+            <div class="lg:col-span-2">
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <h2 class="text-xl font-semibold mb-6 text-gray-800 flex items-center">
+                        <i data-lucide="package" class="w-6 h-6 mr-2 text-primary-color"></i>
+                        Lista de Productos ({<span id="product-count">0</span>})
+                    </h2>
+                    <div id="loading-message" class="text-center py-8 text-gray-500">
+                        Cargando datos en tiempo real...
+                        <i data-lucide="loader" class="animate-spin w-5 h-5 mx-auto mt-2"></i>
+                    </div>
+                    <div id="product-list" class="space-y-4">
+                        <!-- Los elementos del producto se insertarán aquí -->
+                    </div>
+                    <div id="no-results" class="text-center py-8 text-gray-500 hidden">
+                        <i data-lucide="alert-triangle" class="w-6 h-6 mx-auto mb-2"></i>
+                        No se encontraron resultados para el número de teléfono buscado.
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Scripts de Firebase y Lógica de la Aplicación -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, query, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Configuración y Variables Globales (Proporcionadas por el entorno Canvas)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db;
+        let auth;
+        let userId = null;
+        let products = []; // Lista completa de productos
+        let currentSearchTerm = ''; // Término de búsqueda actual
+        
+        // Log de Firebase (opcional, útil para debugging)
+        // setLogLevel('Debug');
+
+        // ------------------------------------
+        // 1. INICIALIZACIÓN DE FIREBASE Y AUTH
+        // ------------------------------------
+        if (Object.keys(firebaseConfig).length > 0) {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            // Iniciar sesión con token personalizado o de forma anónima
+            const authenticate = async () => {
+                try {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Error en la autenticación:", error);
+                }
+            };
+
+            // Listener para el estado de autenticación
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid;
+                    document.getElementById('user-id-display').textContent = `ID de Usuario (Colaboración): ${userId}`;
+                    startFirestoreListener(); // Iniciar listener de datos una vez autenticado
+                } else {
+                    authenticate();
+                }
+            });
+        } else {
+            document.getElementById('user-id-display').textContent = 'Firebase no inicializado. La persistencia de datos no funcionará.';
+        }
+
+
+        // ------------------------------------
+        // 2. LÓGICA DE FIREBASE Y REALTIME
+        // ------------------------------------
+        const getCollectionPath = () => `/artifacts/${appId}/public/data/clientes`;
+
+        /**
+         * Inicia el listener de Firestore para la colección 'clientes'.
+         * Usamos onSnapshot para actualizaciones en tiempo real.
+         */
+        const startFirestoreListener = () => {
+            if (!db || !userId) return; // Asegurar que Firebase esté listo
+
+            const q = query(collection(db, getCollectionPath()));
+
+            onSnapshot(q, (snapshot) => {
+                const fetchedProducts = [];
+                snapshot.forEach((doc) => {
+                    fetchedProducts.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Ordenar por fecha de creación descendente (los más nuevos primero)
+                products = fetchedProducts.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+                
+                // Renderizar la lista después de la búsqueda
+                renderProductList(products.filter(p => filterProduct(p, currentSearchTerm)));
+                document.getElementById('loading-message').classList.add('hidden');
+            }, (error) => {
+                console.error("Error al escuchar Firestore:", error);
+                document.getElementById('loading-message').textContent = 'Error al cargar los datos. Ver consola.';
+            });
+        };
+
+        /**
+         * Guarda un nuevo producto en Firestore.
+         */
+        const saveProduct = async (data) => {
+            if (!db || !userId) {
+                console.error("Firestore o Usuario no inicializado.");
+                return;
+            }
+
+            const saveButton = document.getElementById('save-button');
+            const saveText = document.getElementById('save-text');
+            const spinner = document.getElementById('loading-spinner');
+
+            saveButton.disabled = true;
+            saveText.textContent = 'Guardando...';
+            spinner.classList.remove('hidden');
+
+            try {
+                const colRef = collection(db, getCollectionPath());
+                await addDoc(colRef, {
+                    ...data,
+                    phone: data.phone.trim(), // Asegurar que no haya espacios
+                    createdAt: serverTimestamp(),
+                    createdBy: userId,
+                });
+                // Limpiar el formulario y la imagen después de guardar
+                document.getElementById('product-form').reset();
+                document.getElementById('image-data-url').value = '';
+                document.getElementById('image-preview').classList.add('hidden');
+                document.querySelector('#image-preview img').src = '';
+                toggleAgencyFields(); // Ocultar campos de agencia si es necesario
+            } catch (error) {
+                console.error("Error al añadir documento:", error);
+                alertModal("Error", "Hubo un error al guardar el producto. Inténtalo de nuevo.");
+            } finally {
+                saveButton.disabled = false;
+                saveText.textContent = 'Guardar Producto';
+                spinner.classList.add('hidden');
+            }
+        };
+
+
+        // ------------------------------------
+        // 3. LÓGICA DEL FORMULARIO Y UI
+        // ------------------------------------
+
+        /**
+         * Maneja el envío del formulario.
+         */
+        document.getElementById('product-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const form = e.target;
+            
+            // Validar teléfono (9 dígitos, solo números)
+            const phoneInput = document.getElementById('phone');
+            const phoneValue = phoneInput.value.trim();
+            const phoneError = document.getElementById('phone-error');
+            
+            if (!/^\d{9}$/.test(phoneValue)) {
+                phoneError.classList.remove('hidden');
+                phoneInput.focus();
+                return;
+            } else {
+                phoneError.classList.add('hidden');
+            }
+            
+            // Recoger las nuevas opciones de producto
+            const selectedOptions = [];
+            form.querySelectorAll('input[name="options"]:checked').forEach(checkbox => {
+                selectedOptions.push(checkbox.value);
+            });
+            const otherOptionInput = form.querySelector('input[name="otherOption"]');
+            const otherOption = otherOptionInput.value.trim();
+            
+            if (otherOption) {
+                selectedOptions.push(`OTROS: ${otherOption}`);
+            }
+
+            // Validación simple para asegurar que se seleccione o escriba al menos una opción
+            if (selectedOptions.length === 0) {
+                 alertModal("Campos Incompletos", "Debe seleccionar al menos una opción de producto o especificar 'OTROS'.");
+                 return;
+            }
+
+            const formData = new FormData(form);
+            const data = {
+                type: formData.get('type'),
+                phone: phoneValue,
+                date: formData.get('date'),
+                designer: formData.get('designer'),
+                origin: formData.get('origin'),
+                productOptions: selectedOptions, // Nuevo campo de opciones
+                imagePlaceholder: formData.get('imageDataUrl') || 'https://placehold.co/150x150/e5e7eb/6b7280?text=SIN+IMAGEN', // Usa URL genérica o la data URL temporal
+            };
+
+            // Añadir campos de agencia si aplica
+            if (data.type === 'agencia') {
+                data.agencyName = formData.get('agencyName');
+                data.agencyDNI = formData.get('agencyDNI');
+                data.agencyDestination = formData.get('agencyDestination');
+                
+                // Simple validación de campos de agencia
+                 if (!data.agencyName || !data.agencyDNI || !data.agencyDestination) {
+                     alertModal("Campos Incompletos", "Debe completar todos los campos de 'Agencia'.");
+                     return;
+                 }
+            }
+            
+            saveProduct(data);
+        });
+
+        /**
+         * Muestra/Oculta los campos de Agencia y gestiona su estado (required/disabled).
+         */
+        window.toggleAgencyFields = () => {
+            const type = document.getElementById('type').value;
+            const agencyFields = document.getElementById('agency-fields');
+            const isAgency = type === 'agencia';
+
+            // Lógica explícita para mostrar u ocultar, lo que debería solucionar el problema
+            if (isAgency) {
+                agencyFields.classList.remove('hidden');
+            } else {
+                agencyFields.classList.add('hidden');
+            }
+            
+            // Obtener todos los inputs dentro de los campos de agencia
+            const agencyInputs = agencyFields.querySelectorAll('input');
+
+            // Habilitar/deshabilitar y hacer requeridos/opcionales
+            agencyInputs.forEach(input => {
+                input.required = isAgency;
+                input.disabled = !isAgency; // Deshabilitar si no es agencia para evitar que se envíen o validen si no son visibles
+            });
+        };
+
+        /**
+         * Previsualiza la imagen seleccionada y la convierte a Data URL.
+         */
+        window.previewImage = (event) => {
+            const file = event.target.files[0];
+            const previewContainer = document.getElementById('image-preview');
+            const previewImg = previewContainer.querySelector('img');
+            const dataUrlInput = document.getElementById('image-data-url');
+
+            if (file) {
+                // Previsualizar la imagen temporalmente (usando URL.createObjectURL)
+                previewImg.src = URL.createObjectURL(file);
+                previewContainer.classList.remove('hidden');
+
+                // Convertir la imagen a Data URL para guardarla como una cadena simple si es necesario.
+                // ADVERTENCIA: Solo guardaré un prefijo simple para evitar el límite de 1MB de Firestore.
+                // En un entorno real, la imagen debe subirse a Firebase Storage.
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    dataUrlInput.value = e.target.result.substring(0, 100) + '...'; // Placeholder de la URL de datos
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewImg.src = '';
+                previewContainer.classList.add('hidden');
+                dataUrlInput.value = '';
+            }
+        };
+        
+        // Manejar el pegado de imágenes (simulación, ya que el API de clipboard es limitado en iframes)
+        document.addEventListener('paste', (e) => {
+             const items = e.clipboardData.items;
+             for (let i = 0; i < items.length; i++) {
+                 if (items[i].type.indexOf("image") !== -1) {
+                     const blob = items[i].getAsFile();
+                     if (blob) {
+                         const dataTransfer = new DataTransfer();
+                         dataTransfer.items.add(blob);
+                         document.getElementById('image-upload').files = dataTransfer.files;
+                         previewImage({ target: { files: dataTransfer.files } });
+                         alertModal("Imagen Pegada", "¡Imagen capturada desde el portapapeles!");
+                     }
+                     return;
+                 }
+             }
+        });
+
+
+        // ------------------------------------
+        // 4. LÓGICA DE BÚSQUEDA Y RENDERIZADO
+        // ------------------------------------
+
+        /**
+         * Función de filtro para la búsqueda por número de teléfono.
+         */
+        const filterProduct = (product, searchTerm) => {
+            if (!searchTerm) return true;
+            return product.phone.includes(searchTerm);
+        };
+
+        /**
+         * Maneja el cambio en el campo de búsqueda.
+         */
+        window.handleSearch = (searchTerm) => {
+            currentSearchTerm = searchTerm.trim();
+            const filteredProducts = products.filter(p => filterProduct(p, currentSearchTerm));
+            renderProductList(filteredProducts);
+        };
+
+        /**
+         * Renderiza la lista de productos en el DOM.
+         */
+        const renderProductList = (productList) => {
+            const listContainer = document.getElementById('product-list');
+            const productCountSpan = document.getElementById('product-count');
+            const noResults = document.getElementById('no-results');
+            listContainer.innerHTML = ''; // Limpiar lista
+            productCountSpan.textContent = productList.length;
+
+            if (productList.length === 0) {
+                noResults.classList.remove('hidden');
+                return;
+            }
+            noResults.classList.add('hidden');
+
+
+            productList.forEach(product => {
+                const isAgency = product.type === 'agencia';
+                const typeColor = {
+                    'tienda': 'bg-green-100 text-green-800',
+                    'agencia': 'bg-blue-100 text-blue-800',
+                    'delivery': 'bg-yellow-100 text-yellow-800'
+                };
+                const typeIcon = {
+                    'tienda': 'store',
+                    'agencia': 'plane',
+                    'delivery': 'bike'
+                };
+
+                // Función para mapear las opciones del producto
+                const renderOptions = (options) => {
+                    if (!options || options.length === 0) {
+                        return '<li class="text-gray-500">Ningún producto seleccionado.</li>';
+                    }
+                    return options.map(opt => `
+                        <li class="flex items-center">
+                            <i data-lucide="${opt.startsWith('OTROS:') ? 'edit-3' : 'check-circle'}" class="w-4 h-4 mr-1 ${opt.startsWith('OTROS:') ? 'text-gray-500' : 'text-secondary-color'}"></i>
+                            <span>${opt}</span>
+                        </li>
+                    `).join('');
+                };
+
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 hover:shadow-xl transition duration-300';
+                
+                // Layout responsivo: flex en desktop (lg), columna en móvil
+                productCard.innerHTML = `
+                    <div class="flex flex-col lg:flex-row p-4 sm:p-6 gap-4">
+                        
+                        <!-- Columna de Imagen (4to campo) -->
+                        <div class="lg:w-1/3 flex-shrink-0">
+                            <img src="${product.imagePlaceholder.startsWith('data:image') ? 'https://placehold.co/200x200/e5e7eb/6b7280?text=IMAGEN+CARGADA' : product.imagePlaceholder}" 
+                                 alt="Imagen de Producto" 
+                                 onerror="this.onerror=null; this.src='https://placehold.co/200x200/e5e7eb/6b7280?text=SIN+IMAGEN';"
+                                 class="w-full h-48 object-cover rounded-lg shadow-inner">
+                        </div>
+
+                        <!-- Columna de Información -->
+                        <div class="lg:w-2/3 flex-grow">
+                            
+                            <!-- Metadatos Básicos -->
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full ${typeColor[product.type] || 'bg-gray-100 text-gray-800'} flex items-center">
+                                    <i data-lucide="${typeIcon[product.type] || 'tag'}" class="w-4 h-4 mr-1"></i>
+                                    ${product.type.toUpperCase()}
+                                </span>
+                                <span class="text-sm font-medium text-gray-500">${product.date}</span>
+                            </div>
+
+                            <p class="text-2xl font-bold text-gray-900 mb-1">${product.phone}</p>
+                            <p class="text-sm text-gray-600 mb-4">Diseñador: <span class="font-semibold text-primary-color">${product.designer}</span> | Origen: <span class="font-semibold">${product.origin}</span></p>
+
+                            <!-- NUEVO BLOQUE: Opciones de Producto -->
+                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                <h4 class="text-sm font-semibold text-gray-700 mb-2 border-b pb-1">Productos Incluidos</h4>
+                                <ul class="list-none text-xs text-gray-800 space-y-1">
+                                    ${renderOptions(product.productOptions)}
+                                </ul>
+                            </div>
+                            
+                            <!-- Campos de Agencia (Solo si es agencia) -->
+                            ${isAgency ? `
+                                <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                    <h4 class="text-xs font-bold text-blue-800 mb-2 flex items-center">
+                                        <i data-lucide="send" class="w-4 h-4 mr-1"></i>
+                                        Datos de Agencia
+                                    </h4>
+                                    <div class="text-xs space-y-1 text-blue-700">
+                                        <p><span class="font-semibold">Nombre:</span> ${product.agencyName || 'N/A'}</p>
+                                        <p><span class="font-semibold">DNI:</span> ${product.agencyDNI || 'N/A'}</p>
+                                        <p><span class="font-semibold">Destino:</span> ${product.agencyDestination || 'N/A'}</p>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                listContainer.appendChild(productCard);
+                // Reemplazar iconos Lucide
+                lucide.createIcons();
+            });
+        };
+        
+        /**
+         * Función para un modal simple (reemplazo de alert).
+         */
+        const alertModal = (title, message) => {
+            console.warn(`${title}: ${message}`);
+            const existingModal = document.getElementById('custom-alert-modal');
+            if (existingModal) existingModal.remove();
+
+            const modal = document.createElement('div');
+            modal.id = 'custom-alert-modal';
+            modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4';
+            modal.innerHTML = `
+                <div class="bg-white p-6 rounded-lg shadow-2xl max-w-sm w-full">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">${title}</h3>
+                    <p class="text-sm text-gray-600 mb-4">${message}</p>
+                    <button onclick="document.getElementById('custom-alert-modal').remove()" 
+                            class="w-full bg-primary-color hover:bg-blue-600 text-white font-semibold py-2 rounded-lg">
+                        Aceptar
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        };
+
+        // ------------------------------------
+        // 5. INICIO DE LA APLICACIÓN
+        // ------------------------------------
+        window.onload = () => {
+            // Inicializar iconos de Lucide
+            lucide.createIcons();
+            // Asegurar que los campos de agencia se oculten si el valor inicial es ""
+            toggleAgencyFields();
+        };
+
+    </script>
+
+</body>
+</html>
